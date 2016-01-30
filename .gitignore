@@ -1,3 +1,5 @@
+*.sc
+/.idea
 *.class
 *.log
 
