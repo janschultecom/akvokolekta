@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/janschultecom/akvokolekta](https://badges.gitter.im/janschultecom/akvokolekta.svg)](https://gitter.im/janschultecom/akvokolekta?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/janschultecom/akvokolekta.svg?branch=master)](https://travis-ci.org/janschultecom/akvokolekta)
-[![Dependency Status](https://www.versioneye.com/user/projects/56acbc547e03c7003db694ad/badge.svg?style=flat)](https://www.versioneye.com/user/projects/56acbc547e03c7003db694ad)
+[![Dependency Status](https://www.versioneye.com/user/projects/56acc94b7e03c7003ba41334/badge.svg?style=flat)](https://www.versioneye.com/user/projects/56acc94b7e03c7003ba41334)
 
 Akvokolekta is an extension of the akka streams library. It adds additional (memory-bounded) functionality for processing the stream that is currently not found in the akka streams library. 
 
