@@ -1,6 +1,6 @@
 import com.scalapenos.sbt.prompt.SbtPrompt.autoImport._
 
-sonatypeSettings
+//sonatypeSettings
 
 promptTheme := ScalapenosTheme
 
