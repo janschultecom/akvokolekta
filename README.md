@@ -34,29 +34,37 @@ import com.janschulte.akvokolekta.StreamAdditions._
 ### Deduplication
 
 Deduplicate the stream using memory-bounded bloom filter.
+
 ```scala
-// deduplicates a source
-Source(List(1,2,3,4,1,2,3,4)
-  .deduplicate()
+val source = Source(List(1, 2, 3, 4, 1, 2, 3, 4))
 
+// deduplicate a source
+val deduplicated = source.deduplicate()
+// prints 1 2 3 4 
+deduplicated.runForeach(println)
 
-// deduplicates a flow
-Flow[Int]
-  .deduplicate()
+// deduplicate a flow
+val deduplicator = Flow[Int].deduplicate()
+// prints 1 2 3 4
+source.via(deduplicator).runForeach(println)
 ```
 
 ### Count distinct elements
 
 Count the distinct elements of the stream using memory-bounded data sketches.
 ```scala
-// deduplicates a source
-Source(List(1,2,3,4,1,2,3,4)
-  .countDistinct()
-// Returns a stream that emits the current count of distinct elements.
+// count distinct elements from a source
+val distincts = Source(List(1, 2, 1, 3, 2, 1, 3, 4)).countDistinct()
 
-// deduplicates a flow
-Flow[Int]
-  .countDistinct()
+// prints 1.0 2.0 2.0 3.0 3.0 3.0 3.0 4.0
+distincts.runForeach(println)
+
+// count distinct elements from a flow
+val source = Source(List(1, 2, 1, 3, 2, 1, 3, 4))
+val distincts = Flow[Int].countDistinct()
+
+// prints 1.0 2.0 2.0 3.0 3.0 3.0 3.0 4.0
+source.via(distincts).runForeach(println)
 ```
 
 # The giants
