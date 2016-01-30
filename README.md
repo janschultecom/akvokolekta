@@ -62,3 +62,9 @@ Flow[Int]
 
 * [Yahoo Data Sketches](http://datasketches.github.io/)
 * [ScalaNLP](http://www.scalanlp.org/)
+
+
+# Contributing
+
+If you like to contribute, please create an issue and send a pull request. For more information on pull requests see the [Github pull request tutorial](https://help.github.com/articles/using-pull-requests).
+
