@@ -1,0 +1,14 @@
+language: scala
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION clean test
+scala:
+   - 2.11.7
+jdk:
+  - oraclejdk7
+  - oraclejdk8
+notifications:
+  email:
+    - jan@janschulte.com
+
+script: "sbt clean coverage test"
+after_success: "sbt coveralls"
