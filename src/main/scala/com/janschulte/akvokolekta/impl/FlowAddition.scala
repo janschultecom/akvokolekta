@@ -15,7 +15,7 @@ case class FlowAddition[I, O, M](flow: Flow[I, O, M]) {
    * @param falsePositiveRate the desired rate of false positives
    * @return a flow with removed duplicates
    */
-  def deduplicate(expectedNumItems: Double = 1000, falsePositiveRate: Double = 0.001): Flow[I, O, M] = {
+  def deduplicate(expectedNumItems: Double = 100000, falsePositiveRate: Double = 0.0001): Flow[I, O, M] = {
     val bloom: BloomFilter[O] = BloomFilter.optimallySized[O](expectedNumItems,falsePositiveRate)
 
     flow

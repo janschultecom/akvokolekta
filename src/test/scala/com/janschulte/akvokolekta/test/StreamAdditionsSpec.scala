@@ -20,11 +20,10 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
   implicit val system = ActorSystem("test")
   implicit val mat = ActorMaterializer()
 
-
   "The FlowAdditions" should {
 
-    val totalNumbers = 5000000
-    val distinctNumbers = 10000
+    val totalNumbers = 500000
+    val distinctNumbers = 1000
     val sampleSize = 50000
 
     "deduplicate a source" in {
@@ -33,10 +32,10 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
 
       val eventualDeduplicated =
         Source(elements)
-        .deduplicate(distinctNumbers, 0.001)
+        .deduplicate()
         .runFold(List.empty[Int])((acc, item) => item :: acc)
 
-      val deduplicated = Await.result(eventualDeduplicated, 10 seconds)
+      val deduplicated = Await.result(eventualDeduplicated, 60 seconds)
       deduplicated must haveSize(distinctNumbers)
       deduplicated must containTheSameElementsAs(elements.distinct)
     }
@@ -45,12 +44,12 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
 
       val elements = Seq.fill(totalNumbers)(Random.nextInt(distinctNumbers)).toList
 
-      val deduplicator = Flow[Int].deduplicate(distinctNumbers,0.001)
+      val deduplicator = Flow[Int].deduplicate()
       val eventualDeduplicated = Source(elements)
         .via(deduplicator)
         .runFold(List.empty[Int])((acc, item) => item :: acc)
 
-      val deduplicated = Await.result(eventualDeduplicated, 10 seconds)
+      val deduplicated = Await.result(eventualDeduplicated, 60 seconds)
       deduplicated must haveSize(distinctNumbers)
       deduplicated must containTheSameElementsAs(elements.distinct)
     }
@@ -61,12 +60,12 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
 
       val source = Source(elements)
       val eventualEstimatedDistinct = source
-        .countDistinct(k = 4096, toHash = (x:Long) => x)
+        .countDistinct()
         .take(sampleSize)
         .runFold(List.empty[Double])((acc, item) => item :: acc)
         .map(_.head)
 
-      val estimatedDinstict: Double = Await.result(eventualEstimatedDistinct, 1 second)
+      val estimatedDinstict: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
       estimatedDinstict must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
     }
 
@@ -74,14 +73,14 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
 
       val elements:List[Long] = Random.shuffle(for { i <- 0 to totalNumbers } yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
 
-      val countFlow = Flow[Long].countDistinct(k = 4096, toHash = identity)
+      val countFlow = Flow[Long].countDistinct()
       val eventualEstimatedDistinct = Source(elements)
         .via(countFlow)
         .take(sampleSize)
         .runFold(List.empty[Double])((acc, item) => item :: acc)
         .map(_.head)
 
-      val estimatedDinstict: Double = Await.result(eventualEstimatedDistinct, 1 second)
+      val estimatedDinstict: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
       estimatedDinstict must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
     }
 

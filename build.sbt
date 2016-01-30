@@ -56,10 +56,6 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.4.2-RC1",
   "com.typesafe.akka" %% "akka-testkit" % "2.4.2-RC1",
   "com.typesafe.akka" %% "akka-stream" % "2.4.2-RC1",
-  "org.scalaz" %% "scalaz-core" % "7.1.2",
   "org.scalacheck" %% "scalacheck" % "1.11.6" % "test",
-  "org.specs2" %% "specs2" % "2.4.11" % "test",
-  "org.mockito" % "mockito-core" % "1.9.5" % "test",
-  "org.mockito" % "mockito-all" % "1.9.5" % "test",
-  "junit" % "junit" % "4.11" % "test"
+  "org.specs2" %% "specs2" % "2.4.11" % "test"
 )
