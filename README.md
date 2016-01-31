@@ -9,8 +9,8 @@ Akvokolekta is an extension of the akka streams library. It adds additional (mem
 
 # Features
 
-* Stream deduplication
-* Count distinct elements of a stream.
+* Deduplicate stream
+* Count distinct elements
 
 # Installation
 akvokolekta will be published shortly on sonatype. In the meantime, you have to build & publish manually:
