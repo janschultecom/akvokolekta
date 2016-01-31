@@ -1,8 +1,10 @@
 package com.janschulte.akvokolekta.impl
 
-import akka.stream.scaladsl.Flow
+import akka.stream.{FlowShape, SourceShape}
+import akka.stream.scaladsl.{Source, Flow}
 import breeze.util.BloomFilter
-import com.yahoo.sketches.theta.UpdateSketch
+import com.sun.corba.se.impl.orbutil.graph.Graph
+import com.yahoo.sketches.theta.{UpdateReturnState, Sketches, UpdateSketch}
 
 /**
  * @author Jan Schulte <jan@plasmap.io>
@@ -43,5 +45,43 @@ case class FlowAddition[I, O, M](flow: Flow[I, O, M]) {
     flow
       .map((elem) => sketch.update(toHash(elem)))
       .map(_ => sketch.getEstimate)
+  }
+
+
+  /**
+   * Counts the number of elements of the union of this flow and the other source using a probabilistic sketch. The union is memory bounded.
+   * @param other The source to union.
+   * @param k The size of the hash, the higher the more accurate. See [[http://datasketches.github.io/docs/KMVupdateVkth.html]].
+   * @param toHash Hash function for the elements
+   * @return An estimate of |A ∪ B|
+   */
+  def countUnion(
+                  other: Source[O, M],
+                  k: Int = 4096, 
+                  toHash: (O) => Long = (elem) => elem.hashCode().toLong): Flow[I, Double, M] = {
+
+    val leftSketch: UpdateSketch = Sketches.updateSketchBuilder().build(k)
+    val rightSketch: UpdateSketch = Sketches.updateSketchBuilder().build(k)
+
+    val intersection = Sketches.setOperationBuilder().buildUnion()
+
+    val left = flow
+      .map((elem) => {
+        leftSketch.update(toHash(elem))
+        leftSketch
+      })
+
+    val right = other
+      .map((elem) => {
+        rightSketch.update(toHash(elem))
+        rightSketch
+      })
+
+    left
+      .merge(right)
+      .map((sketch) => {
+      intersection.update(sketch)
+      intersection.getResult.getEstimate
+    })
   }
 }

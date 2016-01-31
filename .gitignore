@@ -1,3 +1,4 @@
+/src/test/scala/com/janschulte/akvokolekta/test/TestSpec.scala
 *.sc
 /.idea
 *.class

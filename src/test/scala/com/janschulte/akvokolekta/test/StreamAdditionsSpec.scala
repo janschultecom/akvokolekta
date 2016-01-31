@@ -12,10 +12,11 @@ import scala.util.Random
 
 import com.janschulte.akvokolekta.StreamAdditions._
 import scala.concurrent.duration._
+
 /**
- * Specification for OsmWayPointMapper
+ * Specification for StreamAdditions
  */
-class StreamAdditionsSpec extends Specification with NoTimeConversions{
+class StreamAdditionsSpec extends Specification with NoTimeConversions {
 
   implicit val system = ActorSystem("test")
   implicit val mat = ActorMaterializer()
@@ -32,8 +33,8 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
 
       val eventualDeduplicated =
         Source(elements)
-        .deduplicate()
-        .runFold(List.empty[Int])((acc, item) => item :: acc)
+          .deduplicate()
+          .runFold(List.empty[Int])((acc, item) => item :: acc)
 
       val deduplicated = Await.result(eventualDeduplicated, 60 seconds)
       deduplicated must haveSize(distinctNumbers)
@@ -56,7 +57,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
 
     "count the distinct elements of a source" in {
 
-      val elements:List[Long] = Random.shuffle(for { i <- 0 to totalNumbers } yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
+      val elements: List[Long] = Random.shuffle(for {i <- 0 to totalNumbers} yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
 
       val source = Source(elements)
       val eventualEstimatedDistinct = source
@@ -71,7 +72,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
 
     "count the distinct elements of a flow" in {
 
-      val elements:List[Long] = Random.shuffle(for { i <- 0 to totalNumbers } yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
+      val elements: List[Long] = Random.shuffle(for {i <- 0 to totalNumbers} yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
 
       val countFlow = Flow[Long].countDistinct()
       val eventualEstimatedDistinct = Source(elements)
@@ -83,7 +84,6 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions{
       val estimatedDinstict: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
       estimatedDinstict must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
     }
-
   }
 
 }
