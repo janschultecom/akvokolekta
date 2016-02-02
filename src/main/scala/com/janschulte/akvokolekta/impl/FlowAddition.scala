@@ -4,10 +4,10 @@ import akka.stream.{FlowShape, SourceShape}
 import akka.stream.scaladsl.{Source, Flow}
 import breeze.util.BloomFilter
 import com.sun.corba.se.impl.orbutil.graph.Graph
-import com.yahoo.sketches.theta.{UpdateReturnState, Sketches, UpdateSketch}
+import com.yahoo.sketches.theta.{Sketch, UpdateReturnState, Sketches, UpdateSketch}
 
 /**
- * @author Jan Schulte <jan@plasmap.io>
+ * @author Jan Schulte <jan@janschulte.com>
  */
 case class FlowAddition[I, O, M](flow: Flow[I, O, M]) {
 
@@ -47,7 +47,6 @@ case class FlowAddition[I, O, M](flow: Flow[I, O, M]) {
       .map(_ => sketch.getEstimate)
   }
 
-
   /**
    * Counts the number of elements of the union of this flow and the other source using a probabilistic sketch. The union is memory bounded.
    * @param other The source to union.
@@ -60,28 +59,14 @@ case class FlowAddition[I, O, M](flow: Flow[I, O, M]) {
                   k: Int = 4096, 
                   toHash: (O) => Long = (elem) => elem.hashCode().toLong): Flow[I, Double, M] = {
 
-    val leftSketch: UpdateSketch = Sketches.updateSketchBuilder().build(k)
-    val rightSketch: UpdateSketch = Sketches.updateSketchBuilder().build(k)
+    val updateSketch = Utility.createSketcher(k, toHash)
 
-    val intersection = Sketches.setOperationBuilder().buildUnion()
+    val left = flow.map(updateSketch)
+    val right = other.map(updateSketch)
 
-    val left = flow
-      .map((elem) => {
-        leftSketch.update(toHash(elem))
-        leftSketch
-      })
-
-    val right = other
-      .map((elem) => {
-        rightSketch.update(toHash(elem))
-        rightSketch
-      })
-
+    val unionSketcher = Utility.createUnionSketcher()
     left
       .merge(right)
-      .map((sketch) => {
-      intersection.update(sketch)
-      intersection.getResult.getEstimate
-    })
+      .map(unionSketcher)
   }
 }

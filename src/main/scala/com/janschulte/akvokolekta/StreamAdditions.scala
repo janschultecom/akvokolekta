@@ -8,7 +8,7 @@ import com.janschulte.akvokolekta.impl.{FlowAddition, SourceAddition}
 /**
  * Advanced utility functions for processing streams.
  *
- * @author Jan Schulte <jan@plasmap.io>
+ * @author Jan Schulte <jan@janschulte.com>
  */
 object StreamAdditions {
 

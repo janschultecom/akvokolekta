@@ -1,7 +1,7 @@
 package com.janschulte.akvokolekta.impl
 
 import akka.NotUsed
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Flow, Source}
 import breeze.util.BloomFilter
 import com.yahoo.sketches.theta.UpdateSketch
 
@@ -43,5 +43,28 @@ case class SourceAddition[O,M](source:Source[O,M]) {
     source
       .map((elem) => sketch.update(toHash(elem)))
       .map(_ => sketch.getEstimate)
+  }
+
+  /**
+   * Counts the number of elements of the union of this source and the other source using a probabilistic sketch. The union is memory bounded.
+   * @param other The source to union.
+   * @param k The size of the hash, the higher the more accurate. See [[http://datasketches.github.io/docs/KMVupdateVkth.html]].
+   * @param toHash Hash function for the elements
+   * @return An estimate of |A ∪ B|
+   */
+  def countUnion(
+                  other: Source[O, M],
+                  k: Int = 4096,
+                  toHash: (O) => Long = (elem) => elem.hashCode().toLong): Source[Double, M] = {
+
+    val updateSketch = Utility.createSketcher(k, toHash)
+
+    val left = source.map(updateSketch)
+    val right = other.map(updateSketch)
+
+    val unionSketcher = Utility.createUnionSketcher()
+    left
+      .merge(right)
+      .map(unionSketcher)
   }
 }

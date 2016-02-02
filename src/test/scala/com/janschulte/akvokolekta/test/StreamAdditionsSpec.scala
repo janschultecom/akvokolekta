@@ -21,7 +21,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
   implicit val system = ActorSystem("test")
   implicit val mat = ActorMaterializer()
 
-  "The FlowAdditions" should {
+  "The StreamAdditions" should {
 
     val totalNumbers = 500000
     val distinctNumbers = 1000
