@@ -7,7 +7,7 @@ import akka.stream.scaladsl._
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 
-import scala.concurrent.Await
+import scala.concurrent.{Future, Await}
 import scala.util.Random
 
 import com.janschulte.akvokolekta.StreamAdditions._
@@ -83,6 +83,24 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
 
       val estimatedDinstict: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
       estimatedDinstict must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
+    }
+
+    "count the union of two flows" in {
+
+      val samples: Int = 100000
+      val leftValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000)).toList
+      val rightValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000) + 3000).toList
+
+      val union = Flow[Int].countUnion(Source(rightValues))
+
+      val flow: Source[Double, NotUsed] = Source(leftValues)
+        .via(union)
+
+      val eventualUnionCount: Future[Double] = flow
+        .runFold(0.0)(Math.max)
+
+      val unionCount = Await.result(eventualUnionCount, 600 seconds)
+      unionCount must beCloseTo(7000.0, 100.0)
     }
   }
 
