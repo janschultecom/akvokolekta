@@ -36,6 +36,7 @@ import com.janschulte.akvokolekta.StreamAdditions._
 
 Deduplicate the stream using memory-bounded bloom filter.
 
+##### Using the scala dsl
 ```scala
 val source = Source(List(1, 2, 3, 4, 1, 2, 3, 4))
 
@@ -48,6 +49,22 @@ deduplicated.runForeach(println)
 val deduplicator = Flow[Int].deduplicate()
 // prints 1 2 3 4
 source.via(deduplicator).runForeach(println)
+```
+
+##### Using the graph api
+```scala
+import com.janschulte.akvokolekta.graph.Deduplicator
+import GraphDSL.Implicits._
+
+val partial = GraphDSL.create() { implicit builder =>
+  val source = builder.add(Broadcast[Int](1))
+  val dedup = builder.add(Deduplicator[Int]())
+  val sink = builder.add(Merge[Int](1))
+
+  source ~> dedup ~> sink
+
+  FlowShape(source.in, sink.out)
+}
 ```
 
 ### Count distinct elements
