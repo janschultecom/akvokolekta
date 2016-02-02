@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.org/janschultecom/akvokolekta.svg?branch=master)](https://travis-ci.org/janschultecom/akvokolekta)
 [![Coverage Status](https://coveralls.io/repos/github/janschultecom/akvokolekta/badge.svg?branch=master)](https://coveralls.io/github/janschultecom/akvokolekta?branch=master)
 [![Dependency Status](https://www.versioneye.com/user/projects/56acc94b7e03c7003ba41334/badge.svg?style=flat)](https://www.versioneye.com/user/projects/56acc94b7e03c7003ba41334)
+[![License](http://img.shields.io/:license-Apache%202-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 Akvokolekta is an extension of the akka streams library. It adds additional (memory-bounded) functionality for processing the stream that is currently not found in the akka streams library. 
 
@@ -13,13 +14,12 @@ Akvokolekta is an extension of the akka streams library. It adds additional (mem
 * Count distinct elements
 
 # Installation
-akvokolekta will be published shortly on sonatype. In the meantime, you have to build & publish manually:
-```sh
-git clone https://github.com/janschultecom/akvokolekta.git
-cd akvokolekta
-sbt publishLocal
+Make sure your `build.sbt` contains the Sonatype snapshot resolver.
+```scala
+resolvers +=
+  "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
 ```
-Add the following line to your build.sbt
+Then just add a library dependency.
 
 ```scala
 libraryDependencies += "com.janschulte" %% "akvokolekta" % "0.1.0-SNAPSHOT"
