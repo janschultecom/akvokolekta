@@ -55,7 +55,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
       deduplicated must containTheSameElementsAs(elements.distinct)
     }
 
-    "count the distinct elements of a source" in {
+    "count distinct elements of a source" in {
 
       val elements: List[Long] = Random.shuffle(for {i <- 0 to totalNumbers} yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
 
@@ -66,11 +66,11 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
         .runFold(List.empty[Double])((acc, item) => item :: acc)
         .map(_.head)
 
-      val estimatedDinstict: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
-      estimatedDinstict must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
+      val estimatedDistinct: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
+      estimatedDistinct must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
     }
 
-    "count the distinct elements of a flow" in {
+    "count distinct elements of a flow" in {
 
       val elements: List[Long] = Random.shuffle(for {i <- 0 to totalNumbers} yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
 
@@ -81,11 +81,27 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
         .runFold(List.empty[Double])((acc, item) => item :: acc)
         .map(_.head)
 
-      val estimatedDinstict: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
-      estimatedDinstict must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
+      val estimatedDistinct: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
+      estimatedDistinct must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
     }
 
-    "count the union of two flows" in {
+    "count union of two sources" in {
+
+      val samples: Int = 100000
+      val leftValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000)).toList
+      val rightValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000) + 3000).toList
+
+      val flow: Source[Double, NotUsed] = Source(leftValues)
+        .countUnion(Source(rightValues))
+
+      val eventualUnionCount: Future[Double] = flow
+        .runFold(0.0)(Math.max)
+
+      val unionCount = Await.result(eventualUnionCount, 600 seconds)
+      unionCount must beCloseTo(7000.0, 100.0)
+    }
+
+    "count union of flow and source" in {
 
       val samples: Int = 100000
       val leftValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000)).toList

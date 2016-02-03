@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl._
 import akka.stream.{ActorMaterializer, FlowShape}
 import com.janschulte.akvokolekta.StreamAdditions._
-import com.janschulte.akvokolekta.graph.Deduplicator
+import com.janschulte.akvokolekta.graph.{Deduplicator, DistinctCounter}
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 
@@ -53,6 +53,30 @@ class GraphAdditionsSpec extends Specification with NoTimeConversions {
       deduplicated must containTheSameElementsAs(elements.distinct)
     }
 
+    "count the distinct elements of a flow" in {
+
+      val elements = Seq.fill(totalNumbers)(Random.nextInt(distinctNumbers)).toList
+
+      import GraphDSL.Implicits._
+
+      val partial = GraphDSL.create() { implicit builder =>
+        val source = builder.add(Broadcast[Int](1))
+        val counter = builder.add(DistinctCounter[Int]())
+        val sink = builder.add(Merge[Double](1))
+
+        source ~> counter ~> sink
+
+        FlowShape(source.in, sink.out)
+      }
+
+      val eventualEstimatedDistinct = Source(elements)
+        .via(partial)
+        .runFold(List.empty[Double])((acc, item) => item :: acc)
+        .map(_.head)
+
+      val estimatedDistinct: Double = Await.result(eventualEstimatedDistinct, 60 seconds)
+      estimatedDistinct must be between(distinctNumbers * 0.95, distinctNumbers * 1.05)
+    }
   }
 
 }
