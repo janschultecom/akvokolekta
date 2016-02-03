@@ -36,7 +36,7 @@ import com.janschulte.akvokolekta.StreamAdditions._
 
 Deduplicate the stream using memory-bounded bloom filter.
 
-##### Using the scala dsl
+##### Using scala dsl
 ```scala
 val source = Source(List(1, 2, 3, 4, 1, 2, 3, 4))
 
@@ -51,7 +51,7 @@ val deduplicator = Flow[Int].deduplicate()
 source.via(deduplicator).runForeach(println)
 ```
 
-##### Using the graph api
+##### Using graph api
 ```scala
 import com.janschulte.akvokolekta.graph.Deduplicator
 import GraphDSL.Implicits._
@@ -70,6 +70,8 @@ val partial = GraphDSL.create() { implicit builder =>
 ### Count distinct elements
 
 Count the distinct elements of the stream using memory-bounded data sketches.
+
+##### Using scala dsl
 ```scala
 // count distinct elements from a source
 val distincts = Source(List(1, 2, 1, 3, 2, 1, 3, 4)).countDistinct()
@@ -83,6 +85,22 @@ val distincts = Flow[Int].countDistinct()
 
 // prints 1.0 2.0 2.0 3.0 3.0 3.0 3.0 4.0
 source.via(distincts).runForeach(println)
+```
+
+##### Using graph api
+```scala
+import com.janschulte.akvokolekta.graph.Deduplicator
+import GraphDSL.Implicits._
+
+val partial = GraphDSL.create() { implicit builder =>
+  val source = builder.add(Broadcast[Int](1))
+  val counter = builder.add(DistinctCounter[Int]())
+  val sink = builder.add(Merge[Double](1))
+
+  source ~> counter ~> sink
+
+  FlowShape(source.in, sink.out)
+}
 ```
 
 # The giants
