@@ -9,7 +9,7 @@ import com.yahoo.sketches.theta.{Sketch, UpdateReturnState, Sketches, UpdateSket
 /**
  * @author Jan Schulte <jan@janschulte.com>
  */
-case class FlowAddition[I, O, M](flow: Flow[I, O, M]) {
+case class EnhancedFlow[I, O, M](flow: Flow[I, O, M]) {
 
   /**
    * Deduplicates the flow using a memory-bounded probabilistic bloom filter
@@ -59,14 +59,44 @@ case class FlowAddition[I, O, M](flow: Flow[I, O, M]) {
                   k: Int = 4096, 
                   toHash: (O) => Long = (elem) => elem.hashCode().toLong): Flow[I, Double, M] = {
 
-    val updateSketch = Utility.createSketcher(k, toHash)
+    val leftSketch = Utility.createSketcher(k, toHash)
+    val rightSketch = Utility.createSketcher(k, toHash)
 
-    val left = flow.map(updateSketch)
-    val right = other.map(updateSketch)
+    val left = flow.map(leftSketch)
+    val right = other.map(rightSketch)
 
     val unionSketcher = Utility.createUnionSketcher()
+    val union = Flow[(UpdateSketch,UpdateSketch)].map(unionSketcher.tupled)
+
     left
-      .merge(right)
-      .map(unionSketcher)
+      .zip(right)
+      .via(union)
+  }
+
+  /**
+   * Counts the number of elements of the intersection of this flow and the other source using a probabilistic sketch.
+   * The intersection is memory bounded.
+   * @param other The source to intersect.
+   * @param k The size of the hash, the higher the more accurate. See [[http://datasketches.github.io/docs/KMVupdateVkth.html]].
+   * @param toHash Hash function for the elements
+   * @return An estimate of |A ∩ B|
+   */
+  def countIntersection(
+                         other: Source[O, M],
+                         k: Int = 4096,
+                         toHash: (O) => Long = (elem) => elem.hashCode().toLong): Flow[I,Double, M] = {
+
+    val leftSketch = Utility.createSketcher(k, toHash)
+    val rightSketch = Utility.createSketcher(k, toHash)
+
+    val left = flow.map(leftSketch)
+    val right = other.map(rightSketch)
+
+    val intersectionSketcher = Utility.createIntersectionSketcher(k)
+    val intersect = Flow[(UpdateSketch,UpdateSketch)].map(intersectionSketcher.tupled)
+
+    left
+      .zip(right)
+      .via(intersect)
   }
 }

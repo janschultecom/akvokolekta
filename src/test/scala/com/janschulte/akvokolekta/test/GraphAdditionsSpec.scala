@@ -53,7 +53,7 @@ class GraphAdditionsSpec extends Specification with NoTimeConversions {
       deduplicated must containTheSameElementsAs(elements.distinct)
     }
 
-    "count the distinct elements of a flow" in {
+    "count distinct elements of a flow" in {
 
       val elements = Seq.fill(totalNumbers)(Random.nextInt(distinctNumbers)).toList
 

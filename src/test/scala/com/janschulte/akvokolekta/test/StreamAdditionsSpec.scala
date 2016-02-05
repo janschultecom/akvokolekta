@@ -27,9 +27,15 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
     val distinctNumbers = 1000
     val sampleSize = 50000
 
+    val rand = new Random()
+
+    val samples: Int = 100000
+    val leftValues: List[Int] = Seq.fill(samples)(rand.nextInt(4000)).toList
+    val rightValues: List[Int] = Seq.fill(samples)(rand.nextInt(4000) + 3000).toList
+
     "deduplicate a source" in {
 
-      val elements = Seq.fill(totalNumbers)(Random.nextInt(distinctNumbers)).toList
+      val elements = Seq.fill(totalNumbers)(rand.nextInt(distinctNumbers)).toList
 
       val eventualDeduplicated =
         Source(elements)
@@ -43,7 +49,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
 
     "deduplicate a flow" in {
 
-      val elements = Seq.fill(totalNumbers)(Random.nextInt(distinctNumbers)).toList
+      val elements = Seq.fill(totalNumbers)(rand.nextInt(distinctNumbers)).toList
 
       val deduplicator = Flow[Int].deduplicate()
       val eventualDeduplicated = Source(elements)
@@ -57,7 +63,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
 
     "count distinct elements of a source" in {
 
-      val elements: List[Long] = Random.shuffle(for {i <- 0 to totalNumbers} yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
+      val elements: List[Long] = rand.shuffle(for {i <- 0 to totalNumbers} yield rand.nextInt(distinctNumbers)).map(_.toLong).toList
 
       val source = Source(elements)
       val eventualEstimatedDistinct = source
@@ -72,7 +78,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
 
     "count distinct elements of a flow" in {
 
-      val elements: List[Long] = Random.shuffle(for {i <- 0 to totalNumbers} yield Random.nextInt(distinctNumbers)).map(_.toLong).toList
+      val elements: List[Long] = rand.shuffle(for {i <- 0 to totalNumbers} yield rand.nextInt(distinctNumbers)).map(_.toLong).toList
 
       val countFlow = Flow[Long].countDistinct()
       val eventualEstimatedDistinct = Source(elements)
@@ -87,9 +93,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
 
     "count union of two sources" in {
 
-      val samples: Int = 100000
-      val leftValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000)).toList
-      val rightValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000) + 3000).toList
+      val expectedSize = calculateExpectedUnionSize(leftValues, rightValues)
 
       val flow: Source[Double, NotUsed] = Source(leftValues)
         .countUnion(Source(rightValues))
@@ -98,14 +102,12 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
         .runFold(0.0)(Math.max)
 
       val unionCount = Await.result(eventualUnionCount, 600 seconds)
-      unionCount must beCloseTo(7000.0, 100.0)
+      unionCount must beCloseTo(expectedSize, 100.0)
     }
 
     "count union of flow and source" in {
 
-      val samples: Int = 100000
-      val leftValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000)).toList
-      val rightValues: List[Int] = Seq.fill(samples)(Random.nextInt(4000) + 3000).toList
+      val expectedSize = calculateExpectedUnionSize(leftValues, rightValues)
 
       val union = Flow[Int].countUnion(Source(rightValues))
 
@@ -116,8 +118,46 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
         .runFold(0.0)(Math.max)
 
       val unionCount = Await.result(eventualUnionCount, 600 seconds)
-      unionCount must beCloseTo(7000.0, 100.0)
+      unionCount must beCloseTo(expectedSize, 100.0)
     }
+
+    "count intersection of two sources" in {
+
+      val expectedSize: Int = calculateExpectedIntersectionSize(leftValues, rightValues)
+
+      val flow: Source[Double, NotUsed] = Source(leftValues)
+        .countIntersection(Source(rightValues))
+
+      val eventualIntersectionCount: Future[Double] = flow
+        .runFold(0.0)(Math.max)
+
+      val intersectionCount = Await.result(eventualIntersectionCount, 600 seconds)
+      intersectionCount.toInt must be_<=(expectedSize)
+    }
+
+    "count intersection of two sources" in {
+
+      val expectedSize: Int = calculateExpectedIntersectionSize(leftValues, rightValues)
+
+      val union = Flow[Int].countIntersection(Source(rightValues))
+
+      val flow: Source[Double, NotUsed] = Source(leftValues)
+        .via(union)
+
+      val eventualIntersectionCount: Future[Double] = flow
+        .runFold(0.0)(Math.max)
+
+      val intersectionCount = Await.result(eventualIntersectionCount, 600 seconds)
+      intersectionCount.toInt must be_<=(expectedSize)
+    }
+
   }
 
+  private def calculateExpectedIntersectionSize(leftValues: List[Int], rightValues: List[Int]): Int = {
+    leftValues.toSet.intersect(rightValues.toSet).size
+  }
+
+  private def calculateExpectedUnionSize(leftValues: List[Int], rightValues: List[Int]): Int = {
+    leftValues.toSet.union(rightValues.toSet).size
+  }
 }

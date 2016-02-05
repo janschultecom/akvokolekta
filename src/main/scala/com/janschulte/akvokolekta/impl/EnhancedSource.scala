@@ -3,12 +3,12 @@ package com.janschulte.akvokolekta.impl
 import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Source}
 import breeze.util.BloomFilter
-import com.yahoo.sketches.theta.UpdateSketch
+import com.yahoo.sketches.theta.{Sketch, UpdateSketch}
 
 /**
  * @author Jan Schulte <jan@plasmap.io>
  */
-case class SourceAddition[O,M](source:Source[O,M]) {
+case class EnhancedSource[O,M](source:Source[O,M]) {
 
   /**
    * Deduplicates the source using a probabilistic bloom filter
@@ -46,7 +46,8 @@ case class SourceAddition[O,M](source:Source[O,M]) {
   }
 
   /**
-   * Counts the number of elements of the union of this source and the other source using a probabilistic sketch. The union is memory bounded.
+   * Counts the number of elements of the union of this source and the other source using a probabilistic sketch.
+   * The union is memory bounded.
    * @param other The source to union.
    * @param k The size of the hash, the higher the more accurate. See [[http://datasketches.github.io/docs/KMVupdateVkth.html]].
    * @param toHash Hash function for the elements
@@ -57,14 +58,44 @@ case class SourceAddition[O,M](source:Source[O,M]) {
                   k: Int = 4096,
                   toHash: (O) => Long = (elem) => elem.hashCode().toLong): Source[Double, M] = {
 
-    val updateSketch = Utility.createSketcher(k, toHash)
+    val leftSketch = Utility.createSketcher(k, toHash)
+    val rightSketch = Utility.createSketcher(k, toHash)
 
-    val left = source.map(updateSketch)
-    val right = other.map(updateSketch)
+    val left = source.map(leftSketch)
+    val right = other.map(rightSketch)
 
     val unionSketcher = Utility.createUnionSketcher()
+    val union = Flow[(UpdateSketch,UpdateSketch)].map(unionSketcher.tupled)
+
     left
-      .merge(right)
-      .map(unionSketcher)
+      .zip(right)
+      .via(union)
+  }
+
+  /**
+   * Counts the number of elements of the intersection of this source and the other source using a probabilistic sketch.
+   * The intersection is memory bounded.
+   * @param other The source to intersect.
+   * @param k The size of the hash, the higher the more accurate. See [[http://datasketches.github.io/docs/KMVupdateVkth.html]].
+   * @param toHash Hash function for the elements
+   * @return An estimate of |A ∩ B|
+   */
+  def countIntersection(
+                  other: Source[O, M],
+                  k: Int = 4096,
+                  toHash: (O) => Long = (elem) => elem.hashCode().toLong): Source[Double, M] = {
+
+    val leftSketch = Utility.createSketcher(k, toHash)
+    val rightSketch = Utility.createSketcher(k, toHash)
+
+    val left = source.map(leftSketch)
+    val right = other.map(rightSketch)
+
+    val intersectionSketcher = Utility.createIntersectionSketcher(k)
+    val intersect = Flow[(UpdateSketch,UpdateSketch)].map(intersectionSketcher.tupled)
+
+    left
+      .zip(right)
+      .via(intersect)
   }
 }
