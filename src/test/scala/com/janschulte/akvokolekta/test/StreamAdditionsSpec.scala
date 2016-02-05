@@ -132,7 +132,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
         .runFold(0.0)(Math.max)
 
       val intersectionCount = Await.result(eventualIntersectionCount, 600 seconds)
-      intersectionCount.toInt must be_<=(expectedSize)
+      intersectionCount must beCloseTo(expectedSize, 100.0)
     }
 
     "count intersection of two sources" in {
@@ -148,7 +148,7 @@ class StreamAdditionsSpec extends Specification with NoTimeConversions {
         .runFold(0.0)(Math.max)
 
       val intersectionCount = Await.result(eventualIntersectionCount, 600 seconds)
-      intersectionCount.toInt must be_<=(expectedSize)
+      intersectionCount must beCloseTo(expectedSize, 100.0)
     }
 
   }
