@@ -12,6 +12,8 @@ Akvokolekta is an extension of the akka streams library. It adds additional (mem
 
 * Deduplicate stream
 * Count distinct elements
+* Count union elements
+* Count intersection elements
 
 # Installation
 Make sure your `build.sbt` contains the Sonatype snapshot resolver.
@@ -103,8 +105,48 @@ val partial = GraphDSL.create() { implicit builder =>
 }
 ```
 
-# The giants
+### Count union elements
 
+Count the union of two streams using memory-bounded data sketches, i.e. the cardinality of the union of two streams |S1 ∪ S2|.
+
+##### Using scala dsl
+```scala
+// estimate cardinality of union of two sources
+val left = Source((0 to 10).toList)
+val right = Source((5 to 14).toList)
+
+// prints ... 15.0
+left.countUnion(right).runForeach(println)
+
+// estimate cardinality of union of source and flow
+val union = Flow[Int].countUnion(right)
+
+// prints ... 15.0
+left.via(union).runForeach(println)
+```
+
+### Count intersecting elements
+
+Count the intersection of two streams using memory-bounded data sketches, i.e. the cardinality of the intersection of two streams |S1 ∩ S2|.
+
+##### Using scala dsl
+```scala
+// estimate cardinality of intersection of two sources
+val left = Source((0 to 10).toList)
+val right = Source((5 to 14).toList)
+
+// prints ... 5.0
+left.countIntersection(right).runForeach(println)
+
+// estimate cardinality of intersection of source and flow
+val intersection = Flow[Int].countIntersection(right)
+
+// prints ... 5.0
+left.via(intersection).runForeach(println)
+```
+
+# The giants
+Like many other projects akvokolekta stands on the shoulders of giants:
 * [Yahoo Data Sketches](http://datasketches.github.io/)
 * [ScalaNLP](http://www.scalanlp.org/)
 
